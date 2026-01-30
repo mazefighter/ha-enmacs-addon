@@ -1,14 +1,18 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Installiere Python und pip (Alpine Linux Basis)
+# Python installieren
 RUN apk add --no-cache python3 py3-pip
 
-# Arbeitsverzeichnis setzen
+# Arbeitsverzeichnis
 WORKDIR /app
 
-# Kopiere das Skript in den Container
+# Dateien kopieren (Python UND das Startskript)
 COPY run.py /app/
+COPY run.sh /run.sh
 
-# Starte das Skript (-u sorgt für un-buffered Output im Log)
-CMD [ "python3", "-u", "/app/run.py" ]
+# Das Startskript ausführbar machen (Wichtig!)
+RUN chmod a+x /run.sh
+
+# Das Startskript als Befehl setzen
+CMD [ "/run.sh" ]
