@@ -1,5 +1,5 @@
 name: "Enmacs Controller"
-version: "1.0.0"
+version: "1.0.1"
 slug: "enmacs_controller"
 description: "Python EMS Logik Controller"
 url: "https://github.com/mazefighter/ha-enmacs-addon"
