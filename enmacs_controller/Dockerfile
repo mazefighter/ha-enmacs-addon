@@ -1,14 +1,13 @@
-# Wir nutzen direkt das offizielle Python Image (Alpine Version ist schön klein)
 FROM python:3.11-alpine
 
-# Python Pufferung deaktivieren (WICHTIG für Logs!)
+# Logs sofort ausgeben
 ENV PYTHONUNBUFFERED=1
 
-# Arbeitsverzeichnis
 WORKDIR /app
 
-# Skript kopieren
+# Requests installieren (für HTTP Calls an HA)
+RUN pip install requests
+
 COPY run.py .
 
-# Starten
 CMD [ "python3", "run.py" ]

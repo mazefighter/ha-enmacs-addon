@@ -1,14 +1,18 @@
 name: "Enmacs Controller"
-version: "1.0.7"
+version: "1.1.0"  # Wichtig: Version hochzählen
 slug: "enmacs_controller"
-description: "Python EMS Logik Controller"
-url: "https://github.com/mazefighter/ha-enmacs-addon"
+description: "Liest Sensoren direkt via API"
+url: "https://github.com/DEIN_USER/ha-enmacs-addon"
 arch:
-  - aarch64  # Wichtig für HA Yellow (ARM)
-  - amd64    # Wichtig für Desktop/Server (Intel/AMD)
+  - aarch64
+  - amd64
 startup: application
 boot: auto
 options:
-  log_level: info
+  # Standard-Werte (zum Testen)
+  sensors_to_watch:
+    - sensor.sun
+    - sensor.time
 schema:
-  log_level: list(info, debug, warning)
+  # Das [str] erzeugt eine dynamische Liste im UI
+  sensors_to_watch: [str]
