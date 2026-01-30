@@ -1,18 +1,15 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Python installieren
-RUN apk add --no-cache python3 py3-pip
+# WICHTIG: Hier 'bash' hinzufügen!
+RUN apk add --no-cache python3 py3-pip dos2unix bash
 
-# Arbeitsverzeichnis
 WORKDIR /app
 
-# Dateien kopieren (Python UND das Startskript)
 COPY run.py /app/
 COPY run.sh /run.sh
 
-# Das Startskript ausführbar machen (Wichtig!)
-RUN chmod a+x /run.sh
+# Windows-Fix und Rechte
+RUN dos2unix /run.sh && chmod a+x /run.sh
 
-# Das Startskript als Befehl setzen
 CMD [ "/run.sh" ]
