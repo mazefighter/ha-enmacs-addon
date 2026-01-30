@@ -13,5 +13,5 @@ print(f"START: Enmacs Controller v1.0.6 - {datetime.datetime.now()}", flush=True
 counter = 0
 while True:
     print(f"PING: System läuft seit {counter} Sekunden", flush=True)
-    time.sleep(10)
-    counter += 10
+    time.sleep(11)
+    counter += 11
