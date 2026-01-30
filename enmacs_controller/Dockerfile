@@ -1,15 +1,16 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# WICHTIG: Hier 'bash' hinzufügen!
-RUN apk add --no-cache python3 py3-pip dos2unix bash
+# Python installieren
+RUN apk add --no-cache python3 py3-pip
+
+# WICHTIG: Sorgt dafür, dass Python-Logs sofort erscheinen!
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Nur noch das Python Skript kopieren
 COPY run.py /app/
-COPY run.sh /run.sh
 
-# Windows-Fix und Rechte
-RUN dos2unix /run.sh && chmod a+x /run.sh
-
-CMD [ "/run.sh" ]
+# Python direkt starten (Kein Shell Skript dazwischen)
+CMD [ "python3", "/app/run.py" ]
