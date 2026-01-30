@@ -1,0 +1,9 @@
+# JetBrains IDE Einstellungen
+.idea/
+
+# Python Bytecode (Müll)
+__pycache__/
+*.py[cod]
+
+# Mac Systemdateien (falls du oder Kollegen Mac nutzen)
+.DS_Store
