@@ -1,16 +1,14 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+# Wir nutzen direkt das offizielle Python Image (Alpine Version ist schön klein)
+FROM python:3.11-alpine
 
-# Python installieren
-RUN apk add --no-cache python3 py3-pip
-
-# WICHTIG: Sorgt dafür, dass Python-Logs sofort erscheinen!
+# Python Pufferung deaktivieren (WICHTIG für Logs!)
 ENV PYTHONUNBUFFERED=1
 
+# Arbeitsverzeichnis
 WORKDIR /app
 
-# Nur noch das Python Skript kopieren
-COPY run.py /app/
+# Skript kopieren
+COPY run.py .
 
-# Python direkt starten (Kein Shell Skript dazwischen)
-CMD [ "python3", "/app/run.py" ]
+# Starten
+CMD [ "python3", "run.py" ]

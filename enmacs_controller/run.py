@@ -1,13 +1,17 @@
 import time
 import sys
+import datetime
 
-print("---------------------------------------", flush=True)
-print("Enmacs Controller v1.0.0 gestartet!", flush=True)
-print("Verbindung zur Matrix hergestellt...", flush=True)
-print("---------------------------------------", flush=True)
+# Sofortige Ausgabe erzwingen
+print("INIT: Container wurde gestartet.", flush=True)
+
+# Kurze Pause, damit das System Zeit hat, den Log-Stream zu verbinden
+time.sleep(1)
+
+print(f"START: Enmacs Controller v1.0.6 - {datetime.datetime.now()}", flush=True)
 
 counter = 0
 while True:
-    print(f"System läuft seit {counter} Sekunden. Alles okay.", flush=True)
+    print(f"PING: System läuft seit {counter} Sekunden", flush=True)
     time.sleep(10)
     counter += 10
