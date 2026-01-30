@@ -1,0 +1,14 @@
+name: "Enmacs Controller"
+version: "1.0.0"
+slug: "enmacs_controller"
+description: "Python EMS Logik Controller"
+url: "https://github.com/mazefighter/ha-enmacs-addon"
+arch:
+  - aarch64  # Wichtig für HA Yellow (ARM)
+  - amd64    # Wichtig für Desktop/Server (Intel/AMD)
+startup: application
+boot: auto
+options:
+  log_level: info
+schema:
+  log_level: list(info, debug, warning)
