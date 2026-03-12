@@ -4,17 +4,25 @@ Enmacs HAApi – Home Assistant API Wrapper.
 Importiere diese Klasse in deinen Skripten für volle IDE-Autovervollständigung:
 
     from haapi import HAApi
+    from entities import EntityId  # optional: für Entity-ID Autocomplete
 
     def initialize(api: HAApi) -> None:
         pass
 
     def run(api: HAApi) -> None:
-        data = api.get_state("sensor.temperature")
+        data = api.get_state("sensor.temperature")  # Entity-IDs werden vorgeschlagen!
         print(data["state"])
 """
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 import requests
+
+if TYPE_CHECKING:
+    try:
+        from entities import EntityId
+    except ImportError:
+        EntityId = str  # type: ignore[assignment,misc]
 
 
 class HAApi:
@@ -31,7 +39,7 @@ class HAApi:
             "content-type": "application/json",
         }
 
-    def get_state(self, entity_id: str) -> dict:
+    def get_state(self, entity_id: EntityId) -> dict:
         """Gibt den aktuellen Zustand einer Entity zurück.
 
         Args:
@@ -63,7 +71,7 @@ class HAApi:
             ) from e
         return resp.json()
 
-    def set_state(self, entity_id: str, state: str, attributes: dict | None = None) -> dict:
+    def set_state(self, entity_id: EntityId, state: str, attributes: dict | None = None) -> dict:
         """Setzt den Zustand einer Entity (nur virtuelle Entities).
 
         Args:
@@ -89,6 +97,26 @@ class HAApi:
             body = e.response.text if (e.response is not None and hasattr(e.response, "text")) else ""
             raise requests.exceptions.HTTPError(
                 f"Error setting state for entity '{entity_id}' to '{state}': {status_code} {reason} - {body}",
+                response=e.response,
+                request=e.request,
+            ) from e
+        return resp.json()
+
+    def get_all_states(self) -> list[dict]:
+        """Gibt den aktuellen Zustand aller Entities zurück."""
+        try:
+            resp = requests.get(
+                f"{self._base}/states",
+                headers=self._headers,
+                timeout=30,
+            )
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code if e.response is not None else "unknown"
+            reason = e.response.reason if (e.response is not None and hasattr(e.response, "reason")) else ""
+            body = e.response.text if (e.response is not None and hasattr(e.response, "text")) else ""
+            raise requests.exceptions.HTTPError(
+                f"Error fetching all states: {status_code} {reason} - {body}",
                 response=e.response,
                 request=e.request,
             ) from e

@@ -1,20 +1,18 @@
 import time
 import os
 import importlib.util
-import shutil
 import yaml
 
 from haapi import HAApi
 
 # Pfade im Container (/config ist das HA-Konfigurationsverzeichnis durch map: config:rw)
-SCRIPTS_DIR   = "/config/enmacs/scripts"
-CONFIG_FILE   = "/config/enmacs/config/enmacs.yaml"
-SCHEMA_SRC    = "/app/enmacs_schema.json"
-SCHEMA_DEST   = "/config/enmacs/config/enmacs_schema.json"
-POLL_INTERVAL = 10  # Sekunden zwischen jedem Zyklus
+SCRIPTS_DIR            = "/config/enmacs/scripts"
+CONFIG_FILE            = "/config/enmacs/config/enmacs.yaml"
+ENTITIES_PY            = "/config/enmacs/scripts/entities.py"
+POLL_INTERVAL          = 10    # Sekunden zwischen jedem Zyklus
+ENTITY_REFRESH_INTERVAL = 3600  # Entity-IDs einmal pro Stunde aktualisieren
 
 DEFAULT_CONFIG = """\
-# yaml-language-server: $schema=./enmacs_schema.json
 # Enmacs Konfiguration
 # Sensoren, die in jedem Zyklus abgefragt und ins Log geschrieben werden:
 sensors:
@@ -106,15 +104,43 @@ class ScriptManager:
 
 
 # ---------------------------------------------------------------------------
+# Entity-Autocomplete generieren
+# ---------------------------------------------------------------------------
+def generate_entity_autocomplete(api: HAApi) -> None:
+    """Lädt alle Entity-IDs aus HA und schreibt entities.py für Pylance-Autocomplete."""
+    try:
+        states = api.get_all_states()
+        entity_ids = sorted(s["entity_id"] for s in states)
+    except Exception as e:
+        print(f"AUTOCOMPLETE: Entity-IDs konnten nicht geladen werden: {e}", flush=True)
+        return
+
+    lines = [
+        "# Auto-generiert von Enmacs Controller – nicht manuell bearbeiten!",
+        "# Kopiere diese Datei zusammen mit haapi.py in deinen Skript-Ordner.",
+        "# Pylance zeigt dann bei api.get_state(\"sensor.\") alle Entity-IDs an.",
+        "",
+        "from typing import Literal",
+        "",
+        "EntityId = Literal[",
+    ]
+    for eid in entity_ids:
+        lines.append(f'    "{eid}",')
+    lines.append("]")
+    lines.append("")
+
+    with open(ENTITIES_PY, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"AUTOCOMPLETE: {len(entity_ids)} Entity-IDs in entities.py geschrieben.", flush=True)
+
+
+# ---------------------------------------------------------------------------
 # Verzeichnisse & Standard-Konfiguration anlegen
 # ---------------------------------------------------------------------------
 def ensure_structure():
     os.makedirs(SCRIPTS_DIR, exist_ok=True)
     config_dir = os.path.dirname(CONFIG_FILE)
     os.makedirs(config_dir, exist_ok=True)
-    # JSON-Schema in den Config-Ordner kopieren (für YAML-Autovervollständigung)
-    if os.path.exists(SCHEMA_SRC):
-        shutil.copy2(SCHEMA_SRC, SCHEMA_DEST)
     if not os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "w") as f:
             f.write(DEFAULT_CONFIG)
@@ -137,6 +163,10 @@ api = HAApi(token)
 ensure_structure()
 script_manager = ScriptManager(api)
 
+# Beim Start sofort Entity-IDs laden
+generate_entity_autocomplete(api)
+last_entity_refresh = time.time()
+
 while True:
     print("----------------------------------------", flush=True)
 
@@ -156,5 +186,10 @@ while True:
     # Skripte aus enmacs/scripts/ laden und ausführen
     script_manager.scan_and_reload()
     script_manager.run_all()
+
+    # Entity-IDs stündlich aktualisieren
+    if time.time() - last_entity_refresh >= ENTITY_REFRESH_INTERVAL:
+        generate_entity_autocomplete(api)
+        last_entity_refresh = time.time()
 
     time.sleep(POLL_INTERVAL)
