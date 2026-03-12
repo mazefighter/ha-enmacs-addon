@@ -7,3 +7,6 @@ __pycache__/
 
 # Mac Systemdateien (falls du oder Kollegen Mac nutzen)
 .DS_Store
+
+# Beispielskripte (nur lokal, nicht Teil des Add-ons)
+enmacs_controller/example_scripts/

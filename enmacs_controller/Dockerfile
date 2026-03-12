@@ -8,6 +8,6 @@ WORKDIR /app
 # Requests installieren (für HTTP Calls an HA)
 RUN pip install requests pyyaml
 
-COPY run.py .
+COPY run.py haapi.py enmacs_schema.json ./
 
 CMD [ "python3", "run.py" ]

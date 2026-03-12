@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Enmacs Konfiguration",
+  "description": "Konfigurationsdatei für den Enmacs Controller Add-on",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "sensors": {
+      "type": "array",
+      "description": "Liste der Entity-IDs, die in jedem Zyklus abgefragt und ins Log geschrieben werden.",
+      "items": {
+        "type": "string",
+        "description": "Entity-ID im Format 'domain.name', z.B. 'sensor.temperature_living_room'",
+        "pattern": "^[a-z_]+\\.[a-z0-9_]+$",
+        "examples": [
+          "sensor.temperature_living_room",
+          "sensor.humidity_bedroom",
+          "binary_sensor.motion_hallway",
+          "switch.living_room_lamp",
+          "light.wohnzimmer",
+          "climate.thermostat",
+          "cover.garage_door",
+          "input_boolean.vacation_mode"
+        ]
+      },
+      "examples": [
+        ["sensor.sun", "sensor.time"],
+        ["sensor.temperature_living_room", "binary_sensor.motion_hallway"]
+      ]
+    }
+  }
+}
