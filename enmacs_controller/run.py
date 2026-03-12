@@ -176,15 +176,9 @@ class ScriptManager:
 def ensure_structure():
     os.makedirs(SCRIPTS_DIR, exist_ok=True)
     config_dir = os.path.dirname(CONFIG_FILE)
-    try:
-        script_manager.scan_and_reload()
-    except Exception as e:
-        print(f"SKRIPT FEHLER bei scan_and_reload(): {e}", flush=True)
-
-    try:
-        script_manager.run_all()
-    except Exception as e:
-        print(f"SKRIPT FEHLER bei run_all(): {e}", flush=True)
+    os.makedirs(config_dir, exist_ok=True)
+    if not os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "w") as f:
             f.write(DEFAULT_CONFIG)
         print(f"CONFIG: Standard-Konfiguration erstellt unter {CONFIG_FILE}", flush=True)
 

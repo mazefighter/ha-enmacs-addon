@@ -2,7 +2,7 @@ name: "Enmacs Controller"
 version: "1.2.0"
 slug: "enmacs_controller"
 description: "Führt Skripte aus enmacs/scripts/ dynamisch aus und liest Sensoren aus enmacs/config/enmacs.yaml"
-url: "https://github.com/DEIN_USER/ha-enmacs-addon"
+url: "https://github.com/mazefighter/ha-enmacs-addon"
 arch:
   - aarch64
   - amd64
