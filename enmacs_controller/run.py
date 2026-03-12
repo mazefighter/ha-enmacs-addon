@@ -9,13 +9,17 @@ import sensor_monitor
 SCRIPTS_DIR            = "/config/enmacs/scripts"
 CONFIG_FILE            = "/config/enmacs/config/enmacs.py"
 ENTITIES_PY            = "/config/enmacs/scripts/entities.py"
+ENTITIES_CONFIG_PY     = "/config/enmacs/config/entities.py"
 POLL_INTERVAL          = 10    # Sekunden zwischen jedem Zyklus
 ENTITY_REFRESH_INTERVAL = 3600  # Entity-IDs einmal pro Stunde aktualisieren
 
 DEFAULT_CONFIG = """\
 # Enmacs Konfiguration
+from entities import EntityId  # Autocomplete für Entity-IDs
+from typing import List
+
 # Sensoren, die in jedem Zyklus abgefragt und ins Log geschrieben werden:
-sensors = [
+sensors: List[EntityId] = [
     "sensor.sun",
     "sensor.time",
 ]
@@ -134,9 +138,11 @@ def generate_entity_autocomplete(api: HAApi) -> None:
     lines.append("]")
     lines.append("")
 
-    with open(ENTITIES_PY, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
-    print(f"AUTOCOMPLETE: {len(entity_ids)} Entity-IDs in entities.py geschrieben.", flush=True)
+    content = "\n".join(lines)
+    for path in (ENTITIES_PY, ENTITIES_CONFIG_PY):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+    print(f"AUTOCOMPLETE: {len(entity_ids)} Entity-IDs in entities.py geschrieben (scripts + config).", flush=True)
 
 
 # ---------------------------------------------------------------------------
