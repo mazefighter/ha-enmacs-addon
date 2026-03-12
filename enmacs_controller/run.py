@@ -7,9 +7,9 @@ import sensor_monitor
 
 # Pfade im Container (/config ist das HA-Konfigurationsverzeichnis durch map: config:rw)
 SCRIPTS_DIR            = "/config/enmacs/scripts"
-CONFIG_FILE            = "/config/enmacs/config/enmacs.py"
+CONFIG_FILE            = "/config/enmacs/scripts/enmacs_config.py"
 ENTITIES_PY            = "/config/enmacs/scripts/entities.py"
-ENTITIES_CONFIG_PY     = "/config/enmacs/config/entities.py"
+INTERNAL_FILES         = {"enmacs_config.py", "entities.py"}  # werden nicht als Skripte ausgeführt
 POLL_INTERVAL          = 10    # Sekunden zwischen jedem Zyklus
 ENTITY_REFRESH_INTERVAL = 3600  # Entity-IDs einmal pro Stunde aktualisieren
 
@@ -68,7 +68,7 @@ class ScriptManager:
             return
 
         try:
-            current_files = {f for f in os.listdir(SCRIPTS_DIR) if f.endswith(".py")}
+            current_files = {f for f in os.listdir(SCRIPTS_DIR) if f.endswith(".py") and f not in INTERNAL_FILES}
         except FileNotFoundError:
             # Das Verzeichnis wurde nach der obigen Prüfung gelöscht
             print(f"WARNUNG: Skript-Ordner nicht gefunden: {SCRIPTS_DIR}", flush=True)
@@ -139,10 +139,9 @@ def generate_entity_autocomplete(api: HAApi) -> None:
     lines.append("")
 
     content = "\n".join(lines)
-    for path in (ENTITIES_PY, ENTITIES_CONFIG_PY):
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(content)
-    print(f"AUTOCOMPLETE: {len(entity_ids)} Entity-IDs in entities.py geschrieben (scripts + config).", flush=True)
+    with open(ENTITIES_PY, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"AUTOCOMPLETE: {len(entity_ids)} Entity-IDs in entities.py geschrieben.", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -150,8 +149,6 @@ def generate_entity_autocomplete(api: HAApi) -> None:
 # ---------------------------------------------------------------------------
 def ensure_structure():
     os.makedirs(SCRIPTS_DIR, exist_ok=True)
-    config_dir = os.path.dirname(CONFIG_FILE)
-    os.makedirs(config_dir, exist_ok=True)
     if not os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "w") as f:
             f.write(DEFAULT_CONFIG)

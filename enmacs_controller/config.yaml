@@ -1,7 +1,7 @@
 name: "Enmacs Controller"
-version: "1.5.2"
+version: "1.5.3"
 slug: "enmacs_controller"
-description: "Führt Skripte aus enmacs/scripts/ dynamisch aus und liest Sensoren aus enmacs/config/enmacs.py"
+description: "Führt Skripte aus enmacs/scripts/ dynamisch aus – Konfiguration über enmacs_config.py im gleichen Ordner"
 url: "https://github.com/mazefighter/ha-enmacs-addon"
 arch:
   - aarch64
