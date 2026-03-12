@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Requests installieren (für HTTP Calls an HA)
-RUN pip install requests
+RUN pip install requests pyyaml
 
 COPY run.py .
 

@@ -1,19 +1,16 @@
 name: "Enmacs Controller"
-version: "1.1.1"
+version: "1.2.0"
 slug: "enmacs_controller"
-description: "Liest Sensoren direkt via API"
+description: "Führt Skripte aus enmacs/scripts/ dynamisch aus und liest Sensoren aus enmacs/config/enmacs.yaml"
 url: "https://github.com/DEIN_USER/ha-enmacs-addon"
 arch:
   - aarch64
   - amd64
 startup: application
 boot: auto
-# Diese Berechtigungen sind neu und wichtig für den Token-Zugriff:
 hassio_api: true
 homeassistant_api: true
-options:
-  sensors_to_watch:
-    - sensor.sun
-    - sensor.time
-schema:
-  sensors_to_watch: [str]
+map:
+  - config:rw
+options: {}
+schema: {}
