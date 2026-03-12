@@ -1,13 +1,13 @@
 import time
 import os
 import importlib.util
-import yaml
 
 from haapi import HAApi
+import sensor_monitor
 
 # Pfade im Container (/config ist das HA-Konfigurationsverzeichnis durch map: config:rw)
 SCRIPTS_DIR            = "/config/enmacs/scripts"
-CONFIG_FILE            = "/config/enmacs/config/enmacs.yaml"
+CONFIG_FILE            = "/config/enmacs/config/enmacs.py"
 ENTITIES_PY            = "/config/enmacs/scripts/entities.py"
 POLL_INTERVAL          = 10    # Sekunden zwischen jedem Zyklus
 ENTITY_REFRESH_INTERVAL = 3600  # Entity-IDs einmal pro Stunde aktualisieren
@@ -15,9 +15,10 @@ ENTITY_REFRESH_INTERVAL = 3600  # Entity-IDs einmal pro Stunde aktualisieren
 DEFAULT_CONFIG = """\
 # Enmacs Konfiguration
 # Sensoren, die in jedem Zyklus abgefragt und ins Log geschrieben werden:
-sensors:
-  - sensor.sun
-  - sensor.time
+sensors = [
+    "sensor.sun",
+    "sensor.time",
+]
 """
 
 # ---------------------------------------------------------------------------
@@ -25,9 +26,13 @@ sensors:
 # ---------------------------------------------------------------------------
 def load_config() -> dict:
     try:
-        with open(CONFIG_FILE, "r") as f:
-            config = yaml.safe_load(f) or {}
-        print(f"CONFIG: {len(config.get('sensors', []))} Sensoren geladen aus {CONFIG_FILE}", flush=True)
+        spec = importlib.util.spec_from_file_location("enmacs_config", CONFIG_FILE)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        config = {
+            "sensors": getattr(mod, "sensors", []),
+        }
+        print(f"CONFIG: {len(config['sensors'])} Sensoren geladen aus {CONFIG_FILE}", flush=True)
         return config
     except FileNotFoundError:
         print(f"CONFIG: Keine Konfigurationsdatei unter {CONFIG_FILE} – verwende Defaults.", flush=True)
@@ -173,15 +178,8 @@ while True:
     # Konfiguration neu einlesen (erkennt Änderungen ohne Neustart)
     config = load_config()
 
-    # Sensoren aus der YAML-Konfiguration abfragen
-    for entity_id in config.get("sensors", []):
-        try:
-            data = api.get_state(entity_id)
-            state = data.get("state")
-            unit = data.get("attributes", {}).get("unit_of_measurement", "")
-            print(f"SENSOR: {entity_id} = {state} {unit}", flush=True)
-        except Exception as e:
-            print(f"SENSOR FEHLER ({entity_id}): {e}", flush=True)
+    # Sensoren ausgeben
+    sensor_monitor.print_sensors(api, config)
 
     # Skripte aus enmacs/scripts/ laden und ausführen
     script_manager.scan_and_reload()
