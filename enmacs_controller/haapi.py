@@ -94,31 +94,6 @@ class HAApi:
             ) from e
         return resp.json()
 
-    def get_all_states(self) -> list[dict]:
-        """Gibt den aktuellen Zustand aller Entities zurück.
-
-        Returns:
-            Liste von dicts, jedes mit den Feldern "entity_id", "state", "attributes",
-            "last_changed" und "last_updated".
-        """
-        try:
-            resp = requests.get(
-                f"{self._base}/states",
-                headers=self._headers,
-                timeout=30,
-            )
-            resp.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            status_code = e.response.status_code if e.response is not None else "unknown"
-            reason = e.response.reason if (e.response is not None and hasattr(e.response, "reason")) else ""
-            body = e.response.text if (e.response is not None and hasattr(e.response, "text")) else ""
-            raise requests.exceptions.HTTPError(
-                f"Error fetching all states: {status_code} {reason} - {body}",
-                response=e.response,
-                request=e.request,
-            ) from e
-        return resp.json()
-
     def call_service(self, domain: str, service: str, **kwargs) -> dict:
         """Ruft einen Home Assistant Service auf.
 

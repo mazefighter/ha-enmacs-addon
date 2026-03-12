@@ -2,19 +2,16 @@ import time
 import os
 import importlib.util
 import shutil
-import json
 import yaml
 
 from haapi import HAApi
 
 # Pfade im Container (/config ist das HA-Konfigurationsverzeichnis durch map: config:rw)
-SCRIPTS_DIR            = "/config/enmacs/scripts"
-CONFIG_FILE            = "/config/enmacs/config/enmacs.yaml"
-SCHEMA_SRC             = "/app/enmacs_schema.json"
-SCHEMA_DEST            = "/config/enmacs/config/enmacs_schema.json"
-ENTITIES_PY            = "/config/enmacs/scripts/entities.py"
-POLL_INTERVAL          = 10    # Sekunden zwischen jedem Zyklus
-ENTITY_REFRESH_INTERVAL = 3600  # Entity-IDs einmal pro Stunde neu laden
+SCRIPTS_DIR   = "/config/enmacs/scripts"
+CONFIG_FILE   = "/config/enmacs/config/enmacs.yaml"
+SCHEMA_SRC    = "/app/enmacs_schema.json"
+SCHEMA_DEST   = "/config/enmacs/config/enmacs_schema.json"
+POLL_INTERVAL = 10  # Sekunden zwischen jedem Zyklus
 
 DEFAULT_CONFIG = """\
 # yaml-language-server: $schema=./enmacs_schema.json
@@ -109,62 +106,6 @@ class ScriptManager:
 
 
 # ---------------------------------------------------------------------------
-# Entity-Autocomplete generieren
-# ---------------------------------------------------------------------------
-def generate_entity_autocomplete(api: HAApi) -> None:
-    """Lädt alle Entity-IDs aus HA und schreibt entities.py + aktualisiert das JSON-Schema."""
-    try:
-        states = api.get_all_states()
-        entity_ids = sorted(s["entity_id"] for s in states)
-    except Exception as e:
-        print(f"AUTOCOMPLETE: Entity-IDs konnten nicht geladen werden: {e}", flush=True)
-        return
-
-    # --- entities.py schreiben (Python-Autocomplete) ---
-    lines = [
-        "# Auto-generiert von Enmacs Controller – nicht manuell bearbeiten!",
-        "# Importiere EntityId und Konstanten in deinen Skripten:",
-        "#",
-        "#   from entities import EntityId, SENSOR_SUN",
-        "#   from haapi import HAApi",
-        "#",
-        "#   def run(api: HAApi) -> None:",
-        "#       api.get_state(SENSOR_SUN)   # Konstante mit Autocomplete",
-        "#       api.get_state(\"sensor.\")    # Literal-Typ zeigt alle Entity-IDs",
-        "",
-        "from typing import Literal",
-        "",
-        "# Alle bekannten Entity-IDs als Literal-Typ:",
-        "EntityId = Literal[",
-    ]
-    for eid in entity_ids:
-        lines.append(f'    "{eid}",')
-    lines.append("]")
-    lines.append("")
-    lines.append("# Konstanten für direkten Zugriff mit Autocomplete:")
-    for eid in entity_ids:
-        const_name = eid.upper().replace(".", "_").replace("-", "_")
-        lines.append(f'{const_name} = "{eid}"')
-    lines.append("")
-
-    with open(ENTITIES_PY, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
-    print(f"AUTOCOMPLETE: {len(entity_ids)} Entity-IDs in entities.py geschrieben.", flush=True)
-
-    # --- JSON-Schema aktualisieren (YAML-Autocomplete) ---
-    try:
-        with open(SCHEMA_DEST, "r", encoding="utf-8") as f:
-            schema = json.load(f)
-        schema["properties"]["sensors"]["items"]["enum"] = entity_ids
-        schema["properties"]["sensors"]["items"].pop("pattern", None)
-        with open(SCHEMA_DEST, "w", encoding="utf-8") as f:
-            json.dump(schema, f, indent=2, ensure_ascii=False)
-        print(f"AUTOCOMPLETE: JSON-Schema mit {len(entity_ids)} Entity-IDs aktualisiert.", flush=True)
-    except Exception as e:
-        print(f"AUTOCOMPLETE: Schema-Update fehlgeschlagen: {e}", flush=True)
-
-
-# ---------------------------------------------------------------------------
 # Verzeichnisse & Standard-Konfiguration anlegen
 # ---------------------------------------------------------------------------
 def ensure_structure():
@@ -196,10 +137,6 @@ api = HAApi(token)
 ensure_structure()
 script_manager = ScriptManager(api)
 
-# Beim Start sofort Entity-Autocomplete generieren
-generate_entity_autocomplete(api)
-last_entity_refresh = time.time()
-
 while True:
     print("----------------------------------------", flush=True)
 
@@ -219,10 +156,5 @@ while True:
     # Skripte aus enmacs/scripts/ laden und ausführen
     script_manager.scan_and_reload()
     script_manager.run_all()
-
-    # Entity-Autocomplete stündlich aktualisieren
-    if time.time() - last_entity_refresh >= ENTITY_REFRESH_INTERVAL:
-        generate_entity_autocomplete(api)
-        last_entity_refresh = time.time()
 
     time.sleep(POLL_INTERVAL)
