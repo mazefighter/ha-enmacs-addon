@@ -6,8 +6,8 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Requests installieren (für HTTP Calls an HA)
-RUN pip install requests pyyaml
+RUN pip install requests
 
-COPY run.py haapi.py ./
+COPY run.py haapi.py sensor_monitor.py ./
 
 CMD [ "python3", "run.py" ]
