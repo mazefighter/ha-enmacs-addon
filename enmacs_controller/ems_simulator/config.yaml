@@ -1,6 +1,6 @@
 name: KIS EMS Simulator
 description: Test- und Simulationsumgebung fuer das KIS Energiemanagementsystem
-version: 0.1.0
+version: 0.1.1
 slug: ems_simulator
 init: false
 arch:
