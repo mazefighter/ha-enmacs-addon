@@ -19,6 +19,21 @@ _RUNTIME = {
         "loaded_apps": [],
         "options": {},
         "enabled_flags": {},
+    "event_log": [],
+    "last_states": {},
+}
+
+_MAX_EVENT_LOG = 120
+
+_IMPORTANT_ENTITY_LABELS = {
+    "sensor.ems_netzbezug_begrenzung": "Netzbezugbegrenzung",
+    "sensor.ems_netzbezug_begrenzung_ausfuehrung": "Netzbezug-Ausfuehrung",
+    "sensor.ems_einspeisesteuerung_zustand": "Einspeisebegrenzung",
+    "sensor.pv_anlage_3_wirkleistungsbegrenzung": "WR3 Wirkleistungsbegrenzung",
+    "sensor.ems_ladesteuerung_wb_main_status": "Wallbox Hauptstatus",
+    "sensor.ems_netzbezug_begrenzung_wallbox_aktiv": "Wallbox Ueberlastregelung",
+    "sensor.ems_ladesteuerung_wb_temperatur_status": "Wallbox Temperatur-Status",
+    "sensor.ems_dynamischer_strompreis": "Dynamischer Strompreis",
 }
 
 _HTML = """\
@@ -88,7 +103,26 @@ _HTML = """\
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
             gap: 12px;
+            margin-bottom: 12px;
         }
+        .events {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+            overflow: hidden;
+        }
+        .events h2 {
+            margin: 0;
+            font-size: .9rem;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            background: #eef5ee;
+            color: #234d2d;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+        }
+        .events-wrap { max-height: 280px; overflow: auto; }
         .section {
             background: var(--card);
             border: 1px solid var(--line);
@@ -139,6 +173,15 @@ _HTML = """\
         <div class="grid" id="kpis"></div>
         <div class="chips" id="apps"></div>
         <div class="sections" id="sections"></div>
+        <section class="events">
+            <h2>Wichtige Ereignisse</h2>
+            <div class="events-wrap">
+                <table>
+                    <thead><tr><th>Zeit</th><th>System</th><th>Wert</th></tr></thead>
+                    <tbody id="events-body"></tbody>
+                </table>
+            </div>
+        </section>
     </div>
 <script>
 function esc(v) {
@@ -168,6 +211,19 @@ function buildRows(items) {
             <td>${esc(e.entity_id)}</td>
             <td class="${stateClass(e.state)}">${esc(e.state)}</td>
             <td class="muted">${esc(e.unit)}</td>
+        </tr>`
+    ).join('');
+}
+
+function buildEventRows(items) {
+    if (!items.length) {
+        return '<tr><td colspan="3" class="muted">Noch keine wichtigen Ereignisse erkannt.</td></tr>';
+    }
+    return items.map(e =>
+        `<tr>
+            <td>${esc(e.ts)}</td>
+            <td>${esc(e.label)}</td>
+            <td class="${stateClass(e.state)}">${esc(e.state)}</td>
         </tr>`
     ).join('');
 }
@@ -206,6 +262,8 @@ async function refresh() {
              </table>
          </section>`
     ).join('');
+
+    document.getElementById('events-body').innerHTML = buildEventRows(status.event_log || []);
 }
 
 refresh().catch(() => {
@@ -262,6 +320,43 @@ def _categorized_entities():
         return categories
 
 
+    def _normalize_state_value(value):
+        if value is None:
+            return "-"
+        return str(value)
+
+
+    def _update_important_event_log():
+        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        event_log = _RUNTIME["event_log"]
+        last_states = _RUNTIME["last_states"]
+
+        for entity_id, label in _IMPORTANT_ENTITY_LABELS.items():
+            current_obj = Hass._state_cache.get(entity_id) or {}
+            current_state = _normalize_state_value(current_obj.get("state"))
+            previous_state = last_states.get(entity_id)
+
+            if previous_state is None:
+                last_states[entity_id] = current_state
+                continue
+
+            if previous_state != current_state:
+                event_log.insert(
+                    0,
+                    {
+                        "ts": now_ts,
+                        "entity_id": entity_id,
+                        "label": label,
+                        "state": current_state,
+                        "prev": previous_state,
+                    },
+                )
+                last_states[entity_id] = current_state
+
+        if len(event_log) > _MAX_EVENT_LOG:
+            del event_log[_MAX_EVENT_LOG:]
+
+
 def _make_ui_app(started_at):
         app = web.Application()
 
@@ -270,12 +365,14 @@ def _make_ui_app(started_at):
 
         async def _status(_request):
                 now = asyncio.get_running_loop().time()
+            _update_important_event_log()
                 body = {
                 "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "uptime_s": int(now - started_at),
                         "loaded_apps": _RUNTIME["loaded_apps"],
                         "enabled_flags": _RUNTIME["enabled_flags"],
                         "cached_states": len(Hass._state_cache),
+                "event_log": _RUNTIME["event_log"][:40],
                 }
                 return web.Response(text=json.dumps(body), content_type="application/json")
 
