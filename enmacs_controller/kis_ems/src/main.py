@@ -358,42 +358,42 @@ def _update_important_event_log():
 
 
 def _make_ui_app(started_at):
-        app = web.Application()
+    app = web.Application()
 
-        async def _ui(_request):
-                return web.Response(text=_HTML, content_type="text/html")
+    async def _ui(_request):
+        return web.Response(text=_HTML, content_type="text/html")
 
-        async def _status(_request):
-            now = asyncio.get_running_loop().time()
-            _update_important_event_log()
-            body = {
-                "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "uptime_s": int(now - started_at),
-                        "loaded_apps": _RUNTIME["loaded_apps"],
-                        "enabled_flags": _RUNTIME["enabled_flags"],
-                        "cached_states": len(Hass._state_cache),
-                "event_log": _RUNTIME["event_log"][:40],
-                }
-                return web.Response(text=json.dumps(body), content_type="application/json")
+    async def _status(_request):
+        now = asyncio.get_running_loop().time()
+        _update_important_event_log()
+        body = {
+            "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "uptime_s": int(now - started_at),
+            "loaded_apps": _RUNTIME["loaded_apps"],
+            "enabled_flags": _RUNTIME["enabled_flags"],
+            "cached_states": len(Hass._state_cache),
+            "event_log": _RUNTIME["event_log"][:40],
+        }
+        return web.Response(text=json.dumps(body), content_type="application/json")
 
-        async def _entities(_request):
-                body = {"categories": _categorized_entities()}
-                return web.Response(text=json.dumps(body), content_type="application/json")
+    async def _entities(_request):
+        body = {"categories": _categorized_entities()}
+        return web.Response(text=json.dumps(body), content_type="application/json")
 
-        app.router.add_get("/", _ui)
-        app.router.add_get("/api/status", _status)
-        app.router.add_get("/api/entities", _entities)
-        return app
+    app.router.add_get("/", _ui)
+    app.router.add_get("/api/status", _status)
+    app.router.add_get("/api/entities", _entities)
+    return app
 
 
 async def _start_ui_server():
-        started_at = asyncio.get_running_loop().time()
-        app = _make_ui_app(started_at)
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, "0.0.0.0", UI_PORT)
-        await site.start()
-        logger.info(f"KIS EMS Monitor UI gestartet auf 0.0.0.0:{UI_PORT}")
+    started_at = asyncio.get_running_loop().time()
+    app = _make_ui_app(started_at)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", UI_PORT)
+    await site.start()
+    logger.info(f"KIS EMS Monitor UI gestartet auf 0.0.0.0:{UI_PORT}")
 
 async def start_apps():
     config_file = "apps.yaml"
