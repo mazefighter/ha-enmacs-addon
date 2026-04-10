@@ -1,0 +1,76 @@
+name: KIS EMS
+description: Combined KIS EMS App
+version: 0.1.0
+slug: kis_ems
+init: false
+arch:
+- aarch64
+- amd64
+- armhf
+- armv7
+- i386
+startup: application
+boot: auto
+options:
+  fronius_legacy_url: http://192.168.1.100
+  epex_token: ''
+  sensor: sensor.ems_dynamischer_strompreis
+  dwd_temp_entity: sensor.dwd_temperatur
+  sensor_grid_leistung: sensor.grid_leistung_gesamt_in_w
+  sensor_grid_einspeisung: sensor.grid_leistung_einspeisung_in_w
+  sensor_pv_anlage_1_2: sensor.pv_anlage_1_2_gesamtleistung_in_w
+  max_pv_leistung_kw: 52.5
+  script_pv_set_limit: script/pv_anlage_set_wirkleistungslimit_pct
+  script_pv_activate_limit: script/pv_anlage_aktiviere_wirkleistungslimit
+  notify_targets: []
+  enable_core: true
+  enable_facility: true
+  enable_storage: true
+  enable_wallbox: true
+  addon_slug: bf7963f0_ism7mqtt-experimental
+  check_interval_seconds: 120
+  restart_cooldown_minutes: 5
+  stale_threshold_minutes: 10
+  wolflink_modules:
+  - name: cube20
+    ip: 172.16.20.139
+    user: admin
+    password: ''
+  - name: cube30
+    ip: 172.16.20.105
+    user: admin
+    password: ''
+  location_id: ''
+  token: ''
+  placeholder: none
+schema:
+  fronius_legacy_url: str
+  epex_token: str
+  sensor: str
+  dwd_temp_entity: str
+  sensor_grid_leistung: str
+  sensor_grid_einspeisung: str
+  sensor_pv_anlage_1_2: str
+  max_pv_leistung_kw: float
+  script_pv_set_limit: str
+  script_pv_activate_limit: str
+  notify_targets:
+  - str
+  enable_core: bool
+  enable_facility: bool
+  enable_storage: bool
+  enable_wallbox: bool
+  addon_slug: str
+  check_interval_seconds: int
+  restart_cooldown_minutes: int
+  stale_threshold_minutes: int
+  wolflink_modules:
+  - name: str
+    ip: str
+    user: str
+    password: password
+  location_id: str
+  token: str
+  placeholder: str
+environment:
+  PYTHONUNBUFFERED: '1'

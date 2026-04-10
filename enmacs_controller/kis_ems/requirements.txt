@@ -1,0 +1,7 @@
+aiohttp
+holidays
+pyyaml
+requests
+schedule
+tzdata
+websockets

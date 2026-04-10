@@ -1,0 +1,79 @@
+ems_bezugsueberwachung:
+  class: EmsBezugsueberwachung
+  module: ems_bezugsueberwachung
+  sensor_grid_leistung: sensor.grid_leistung_gesamt_in_w
+  notify_targets: []
+  _source_addon: ems_core
+ems_einspeisebegrenzung:
+  class: EmsEinspeisebegrenzung
+  module: ems_einspeisebegrenzung
+  sensor_grid_einspeisung: sensor.grid_leistung_einspeisung_in_w
+  sensor_pv_anlage_1_2: sensor.pv_anlage_1_2_gesamtleistung_in_w
+  max_pv_leistung_kw: 52.5
+  script_pv_set_limit: script/pv_anlage_set_wirkleistungslimit_pct
+  script_pv_activate_limit: script/pv_anlage_aktiviere_wirkleistungslimit
+  notify_targets: []
+  _source_addon: ems_core
+ems_fronius_cgi:
+  class: EmsFroniusCgiReader
+  module: ems_fronius_cgi
+  fronius_legacy_url: http://192.168.1.100
+  _source_addon: ems_core
+ems_strompreisbewertung:
+  class: EMSStrompreisbewertung
+  module: ems_strompreisbewertung
+  epex_token: ''
+  sensor: sensor.ems_dynamischer_strompreis
+  _source_addon: ems_core
+ems_supervisor:
+  class: EmsSupervisor
+  module: ems_supervisor
+  dwd_temp_entity: sensor.dwd_temperatur
+  _source_addon: ems_core
+bms_lichtsteuerung:
+  class: HalleBeleuchtungCheck
+  module: bms_lichtsteuerung
+  _source_addon: ems_facility
+control_ism7:
+  addon_slug: bf7963f0_ism7mqtt-experimental
+  check_interval_seconds: 120
+  class: ControlIsm7
+  module: control_ism7
+  restart_cooldown_minutes: 5
+  stale_threshold_minutes: 10
+  wolflink_modules:
+    cube20:
+      ip: 172.16.20.139
+      password: '!secret ism7_cube20_pwd'
+      user: admin
+    cube30:
+      ip: 172.16.20.105
+      password: '!secret ism7_cube30_pwd'
+      user: admin
+  _source_addon: ems_facility
+ems_batteriemanagement:
+  class: EmsBatteriemanagement
+  module: ems_batteriemanagement
+  _source_addon: ems_storage
+get_victron_pv_forecast:
+  class: AdVictronPvForecast
+  location_id: 492858
+  module: ad_victron_pv_forecast
+  token: '!secret vrm_token'
+  _source_addon: ems_storage
+pv_forecast_classification:
+  class: PvForecastClassifier
+  module: pv_forecast_classification
+  _source_addon: ems_storage
+ems_ladesteuerung:
+  class: EmsLadesteuerung
+  module: ems_ladesteuerung
+  _source_addon: ems_wallbox
+ems_ls_wallbox:
+  class: EmsWallboxSteuerung
+  module: ems_ls_wallbox
+  _source_addon: ems_wallbox
+preisbewertung_laden:
+  class: PreisbewertungLaden
+  module: ems_preisbewertung_laden
+  _source_addon: ems_wallbox

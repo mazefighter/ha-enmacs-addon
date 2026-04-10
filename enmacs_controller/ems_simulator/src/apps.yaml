@@ -1,0 +1,5 @@
+ems_simulator:
+  class: EmsSimulator
+  module: ems_simulator
+  confirm_delay_seconds: 3
+  auto_update_sun_sensor: true
