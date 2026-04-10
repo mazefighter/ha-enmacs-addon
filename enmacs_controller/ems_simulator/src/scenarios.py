@@ -109,6 +109,7 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "[SIM] WR3 Wirkleistungsbegrenzung",
             "unit_of_measurement": "%",
+            "state_class": "measurement",
         },
     },
 
@@ -118,6 +119,8 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "[SIM] Grid Gesamtleistung",
             "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
         },
     },
     "sensor.grid_leistung_einspeisung_in_w": {
@@ -125,6 +128,8 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "[SIM] Grid Einspeisung",
             "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
         },
     },
     "sensor.pv_anlage_1_2_gesamtleistung_in_w": {
@@ -132,6 +137,8 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "[SIM] PV Anlage 1+2 Gesamtleistung",
             "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
         },
     },
 
@@ -141,6 +148,8 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "[SIM] Batteriespeicher SoC",
             "unit_of_measurement": "%",
+            "device_class": "battery",
+            "state_class": "measurement",
         },
     },
     "sensor.batterie_leistung": {
@@ -148,6 +157,8 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "[SIM] Batteriespeicher Leistung",
             "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
         },
     },
     "sensor.wallbox_leistung": {
@@ -155,13 +166,18 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "[SIM] Wallboxen Leistung",
             "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
         },
     },
 
     # ---- Sonne (benötigt von ems_einspeisebegrenzung) ---------------------
     "sensor.sun_next_dusk": {
         "state": _next_dusk_iso(),
-        "attributes": {"friendly_name": "[SIM] Nächster Sonnenuntergang"},
+        "attributes": {
+            "friendly_name": "[SIM] Nächster Sonnenuntergang",
+            "device_class": "timestamp",
+        },
     },
 
     # ---- DWD Temperatur (benötigt von ems_supervisor) ---------------------
@@ -170,6 +186,8 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "[SIM] DWD Temperatur",
             "unit_of_measurement": "°C",
+            "device_class": "temperature",
+            "state_class": "measurement",
             # 12 Halbstundenwerte wie vom DWD-Sensor geliefert
             "forecast": [{"temperature": 15}] * 12,
         },
@@ -180,7 +198,7 @@ INITIAL_ENTITIES: dict = {
         "state": 0,
         "attributes": {
             "friendly_name": "EMS Dynamischer Strompreis",
-            "unit_of_measurement": "eur/kWh",
+            "unit_of_measurement": "EUR/kWh",
         },
     },
 }
