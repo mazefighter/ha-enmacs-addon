@@ -5,11 +5,298 @@ import importlib
 import sys
 import os
 import json
+from datetime import datetime
 
+from aiohttp import web
 from ha_wrapper import Hass
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("ems.main")
+
+UI_PORT = 8100
+
+_RUNTIME = {
+        "loaded_apps": [],
+        "options": {},
+        "enabled_flags": {},
+}
+
+_HTML = """\
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIS EMS Monitor</title>
+    <style>
+        :root {
+            --bg: #f3f7f2;
+            --ink: #152226;
+            --card: #ffffff;
+            --line: #d8e0d5;
+            --good: #2d8f58;
+            --warn: #b26a11;
+            --bad: #a6322f;
+            --accent: #184f5c;
+            --accent-soft: #e7f2f4;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", "Noto Sans", sans-serif;
+            background: radial-gradient(1200px 400px at 20% -10%, #d9ece9 0%, transparent 60%), var(--bg);
+            color: var(--ink);
+        }
+        .top {
+            padding: 20px 24px;
+            background: linear-gradient(135deg, #133b44, #205867);
+            color: #fff;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .title { font-size: 1.3rem; font-weight: 700; letter-spacing: .3px; }
+        .stamp { font-size: .85rem; opacity: .9; }
+        .wrap { max-width: 1300px; margin: 0 auto; padding: 18px; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .kpi {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        }
+        .kpi .label { font-size: .75rem; text-transform: uppercase; color: #5f6a6d; }
+        .kpi .value { font-size: 1.2rem; font-weight: 700; margin-top: 4px; }
+        .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .chip {
+            background: var(--accent-soft);
+            border: 1px solid #b6d0d6;
+            color: #123b45;
+            font-size: .75rem;
+            border-radius: 16px;
+            padding: 4px 10px;
+        }
+        .sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 12px;
+        }
+        .section {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        }
+        .section h2 {
+            margin: 0;
+            font-size: .9rem;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            background: #eef5ee;
+            color: #234d2d;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--line);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            font-size: .8rem;
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid #edf2ed;
+            vertical-align: top;
+            overflow-wrap: anywhere;
+        }
+        th { font-size: .72rem; text-transform: uppercase; color: #5f6a6d; }
+        tr:last-child td { border-bottom: none; }
+        .state-ok { color: var(--good); font-weight: 700; }
+        .state-warn { color: var(--warn); font-weight: 700; }
+        .state-bad { color: var(--bad); font-weight: 700; }
+        .muted { color: #6c7579; }
+        @media (max-width: 640px) {
+            .sections { grid-template-columns: 1fr; }
+            .title { font-size: 1.05rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top">
+        <div>
+            <div class="title">KIS EMS Laufzeitmonitor</div>
+            <div class="stamp" id="stamp">Lade Daten...</div>
+        </div>
+        <div class="chip" id="uptime-chip">Uptime: -</div>
+    </div>
+    <div class="wrap">
+        <div class="grid" id="kpis"></div>
+        <div class="chips" id="apps"></div>
+        <div class="sections" id="sections"></div>
+    </div>
+<script>
+function esc(v) {
+    if (v === null || v === undefined) return '-';
+    return String(v)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function stateClass(v) {
+    const t = String(v || '').toLowerCase();
+    if (t === 'on' || t === 'ok' || t === 'running') return 'state-ok';
+    if (t.includes('error') || t.includes('fail') || t === 'unavailable') return 'state-bad';
+    if (t === 'off' || t.includes('warn')) return 'state-warn';
+    return 'muted';
+}
+
+function buildRows(items) {
+    if (!items.length) {
+        return '<tr><td colspan="3" class="muted">Keine passenden Entities im Cache.</td></tr>';
+    }
+    return items.map(e =>
+        `<tr>
+            <td>${esc(e.entity_id)}</td>
+            <td class="${stateClass(e.state)}">${esc(e.state)}</td>
+            <td class="muted">${esc(e.unit)}</td>
+        </tr>`
+    ).join('');
+}
+
+async function refresh() {
+    const [statusResp, entitiesResp] = await Promise.all([
+        fetch('api/status'),
+        fetch('api/entities')
+    ]);
+
+    const status = await statusResp.json();
+    const entities = await entitiesResp.json();
+
+    document.getElementById('stamp').textContent =
+        `Letzte Aktualisierung: ${status.now} | States im Cache: ${status.cached_states}`;
+    document.getElementById('uptime-chip').textContent = `Uptime: ${status.uptime_s}s`;
+
+    document.getElementById('kpis').innerHTML = [
+        { label: 'Geladene Apps', value: status.loaded_apps.length },
+        { label: 'Core aktiv', value: status.enabled_flags.enable_core ? 'Ja' : 'Nein' },
+        { label: 'Facility aktiv', value: status.enabled_flags.enable_facility ? 'Ja' : 'Nein' },
+        { label: 'Storage aktiv', value: status.enabled_flags.enable_storage ? 'Ja' : 'Nein' },
+        { label: 'Wallbox aktiv', value: status.enabled_flags.enable_wallbox ? 'Ja' : 'Nein' }
+    ].map(k => `<div class="kpi"><div class="label">${k.label}</div><div class="value">${k.value}</div></div>`).join('');
+
+    document.getElementById('apps').innerHTML = status.loaded_apps.length
+        ? status.loaded_apps.map(a => `<span class="chip">${esc(a)}</span>`).join('')
+        : '<span class="chip">Keine Apps geladen</span>';
+
+    document.getElementById('sections').innerHTML = Object.entries(entities.categories).map(([name, rows]) =>
+        `<section class="section">
+             <h2>${esc(name)} (${rows.length})</h2>
+             <table>
+                 <thead><tr><th>Entity</th><th>State</th><th>Einheit</th></tr></thead>
+                 <tbody>${buildRows(rows)}</tbody>
+             </table>
+         </section>`
+    ).join('');
+}
+
+refresh().catch(() => {
+    document.getElementById('stamp').textContent = 'Fehler beim Laden der Daten';
+});
+setInterval(() => refresh().catch(() => {}), 5000);
+</script>
+</body>
+</html>
+"""
+
+
+def _extract_unit(state_obj):
+        attrs = state_obj.get("attributes") or {}
+        return attrs.get("unit_of_measurement", "")
+
+
+def _category_for_entity(entity_id):
+        eid = entity_id.lower()
+        if eid.startswith("sensor.ems_") or eid.startswith("input_boolean.ems_") or eid.startswith("input_number.ems_"):
+                return "Core"
+        if "wallbox" in eid or "ladebox" in eid or eid.startswith("sensor.wb_"):
+                return "Wallbox"
+        if "redox" in eid or "batterie" in eid or "victron" in eid or "pv_forecast" in eid:
+                return "Storage"
+        if "wolfcube" in eid or "swli" in eid or "halle" in eid:
+                return "Facility"
+        if eid.startswith("sensor.grid_") or eid.startswith("sensor.pv_") or eid.startswith("sensor.sun_") or eid.startswith("sensor.dwd_"):
+                return "Core"
+        return "System"
+
+
+def _categorized_entities():
+        categories = {
+                "Core": [],
+                "Facility": [],
+                "Storage": [],
+                "Wallbox": [],
+                "System": [],
+        }
+        for entity_id, state_obj in Hass._state_cache.items():
+                category = _category_for_entity(entity_id)
+                categories[category].append(
+                        {
+                                "entity_id": entity_id,
+                                "state": state_obj.get("state", "-"),
+                                "unit": _extract_unit(state_obj),
+                        }
+                )
+
+        for key in categories:
+                categories[key].sort(key=lambda row: row["entity_id"])
+
+        return categories
+
+
+def _make_ui_app(started_at):
+        app = web.Application()
+
+        async def _ui(_request):
+                return web.Response(text=_HTML, content_type="text/html")
+
+        async def _status(_request):
+                now = asyncio.get_running_loop().time()
+                body = {
+                "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "uptime_s": int(now - started_at),
+                        "loaded_apps": _RUNTIME["loaded_apps"],
+                        "enabled_flags": _RUNTIME["enabled_flags"],
+                        "cached_states": len(Hass._state_cache),
+                }
+                return web.Response(text=json.dumps(body), content_type="application/json")
+
+        async def _entities(_request):
+                body = {"categories": _categorized_entities()}
+                return web.Response(text=json.dumps(body), content_type="application/json")
+
+        app.router.add_get("/", _ui)
+        app.router.add_get("/api/status", _status)
+        app.router.add_get("/api/entities", _entities)
+        return app
+
+
+async def _start_ui_server():
+        started_at = asyncio.get_running_loop().time()
+        app = _make_ui_app(started_at)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", UI_PORT)
+        await site.start()
+        logger.info(f"KIS EMS Monitor UI gestartet auf 0.0.0.0:{UI_PORT}")
 
 async def start_apps():
     config_file = "apps.yaml"
@@ -89,6 +376,20 @@ async def start_apps():
             
         except Exception as e:
             logger.error(f"Fehler beim Laden von Modul {module_name} (App {app_name}): {e}", exc_info=True)
+
+    _RUNTIME["loaded_apps"] = sorted(loaded_apps.keys())
+    _RUNTIME["options"] = options
+    _RUNTIME["enabled_flags"] = {
+        "enable_core": str(options.get("enable_core", True)).lower() != "false",
+        "enable_facility": str(options.get("enable_facility", True)).lower() != "false",
+        "enable_storage": str(options.get("enable_storage", True)).lower() != "false",
+        "enable_wallbox": str(options.get("enable_wallbox", True)).lower() != "false",
+    }
+
+    try:
+        await _start_ui_server()
+    except Exception as e:
+        logger.error(f"KIS EMS Monitor UI konnte nicht gestartet werden: {e}", exc_info=True)
 
     logger.info("Alle Apps geladen. Warte auf Events...")
         
