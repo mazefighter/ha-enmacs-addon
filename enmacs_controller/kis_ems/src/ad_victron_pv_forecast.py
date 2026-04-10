@@ -157,6 +157,9 @@ class AdVictronPvForecast(hass.Hass):
     def fetch_ess_forecast(self, kwargs):
         token = self.args["token"]
         result = self.get_victron_ess_forecast(token)
+        if not result:
+            self.error("Keine Forecast-Daten vom Victron API erhalten.")
+            return
         if result["solar_forecast"].daily_entries:
             attributes = self.get_state(PVFORECAST_TODAY, attribute="all").get("attributes", {})
             attributes.update({"data": result["solar_forecast"].daily_entries[0]["entries"]})

@@ -370,7 +370,9 @@ async def start_apps():
             
             app_instance.get_app = lambda name: loaded_apps.get(name)
             
-            app_instance.initialize()
+            init_result = app_instance.initialize()
+            if asyncio.iscoroutine(init_result):
+                await init_result
             logger.info(f"App {app_name} wurde gestartet.")
             
         except Exception as e:

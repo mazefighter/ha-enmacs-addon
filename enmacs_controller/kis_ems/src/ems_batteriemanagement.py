@@ -297,7 +297,7 @@ class EmsBatteriemanagement(hass.Hass):
                 return
             if redox and self.__ist_direkt_steuerbar(batterie):
                 if self.__ist_status_aktuell_standby(batterie): #Bei Redox Status Standby Batterie nicht auf inaktiv setzen
-                    self.log(f"Batterie {batterie['name']} ist in Standby {round(batterie.get("status", 0))} und wird nicht deaktiviert.")
+                    self.log(f"Batterie {batterie['name']} ist in Standby {round(batterie.get('status', 0))} und wird nicht deaktiviert.")
                     return
             self.log(
                 f"Batterie {batterie['name']} wird deaktiviert!  (now: {datetime.now().astimezone(timezone.utc)}) - letzte Aktualisierung: {letzte_aktualisierung} ({keine_aktualisierung_seit_sekunden}s)")

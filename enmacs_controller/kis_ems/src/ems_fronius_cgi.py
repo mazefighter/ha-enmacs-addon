@@ -87,4 +87,7 @@ class EmsFroniusCgiReader(hass.Hass):
                 self.log(f"Unbekannter Fehler beim Parsen der XML-Daten: {e}", level="ERROR")
 
         except requests.exceptions.RequestException as e:
-            self.log(f"Fehler bei der Abfrage des Fronius-Servers({self.args.get("fronius_legacy_url")}): {e}", level="ERROR")
+            self.log(
+                f"Fehler bei der Abfrage des Fronius-Servers ({self.args.get('fronius_legacy_url')}): {e}",
+                level="ERROR",
+            )

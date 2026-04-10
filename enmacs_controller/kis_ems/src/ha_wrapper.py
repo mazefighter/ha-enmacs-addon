@@ -8,6 +8,7 @@ import uuid
 import requests as _requests_sync
 from datetime import datetime, timedelta, time, date
 from typing import Dict, Any, Callable, Optional, List
+import concurrent.futures
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -56,9 +57,10 @@ class Hass:
     # Singleton-ähnliche Connection – wird von allen App-Instanzen geteilt
     _ws_client = None
     _rest_session = None
-    _supervisor_token = os.environ.get("SUPERVISOR_TOKEN", "")
+    _supervisor_token = os.environ.get("SUPERVISOR_TOKEN") or os.environ.get("HASSIO_TOKEN", "")
     _base_url = "http://supervisor/core/api"
     _ws_url = "ws://supervisor/core/websocket"
+    _loop: Optional[asyncio.AbstractEventLoop] = None
     _message_id = 1
     _pending_requests: Dict[int, asyncio.Future] = {}
     _state_cache: Dict[str, Any] = {}
@@ -100,6 +102,7 @@ class Hass:
     @classmethod
     async def connect(cls):
         """Verbindet den Singleton WebSocket und REST Session."""
+        cls._loop = asyncio.get_running_loop()
         if not cls._supervisor_token:
             logger.warning("Kein SUPERVISOR_TOKEN – API-Calls könnten fehlschlagen.")
 
@@ -143,9 +146,12 @@ class Hass:
                             logger.info("WebSocket authentifiziert.")
                             await cls._fetch_all_states()
                             await cls._send_ws({"type": "subscribe_events", "event_type": "state_changed"})
+                            await cls._send_ws({"type": "subscribe_events"})
 
                         elif data.get("type") == "event":
                             event = data.get("event", {})
+                            event_type = event.get("event_type")
+                            event_data = event.get("data", {})
                             if event.get("event_type") == "state_changed":
                                 ed = event.get("data", {})
                                 entity_id = ed.get("entity_id")
@@ -163,6 +169,23 @@ class Hass:
                                     asyncio.create_task(
                                         cls._dispatch_listener(cb, entity_id, old_state, new_state, listen_kwargs)
                                     )
+
+                            for _handle, cb, listen_event, listen_kwargs in cls._event_listeners:
+                                if listen_event and listen_event != event_type:
+                                    continue
+
+                                # Zusätzliche Filter wie service/domain über event.data
+                                match = True
+                                for key, expected in listen_kwargs.items():
+                                    if key == "event":
+                                        continue
+                                    if event_data.get(key) != expected:
+                                        match = False
+                                        break
+                                if not match:
+                                    continue
+
+                                asyncio.create_task(cls._run_callback(cb, event_type, event_data, listen_kwargs))
 
                         elif data.get("id") in cls._pending_requests:
                             future = cls._pending_requests.pop(data["id"])
@@ -214,6 +237,26 @@ class Hass:
         except asyncio.TimeoutError:
             cls._pending_requests.pop(msg_id, None)
             return {}
+
+    @classmethod
+    def _schedule_coroutine(cls, coro):
+        """Plant Coroutine sowohl aus dem Event-Loop als auch aus Worker-Threads sicher ein."""
+        try:
+            running_loop = asyncio.get_running_loop()
+            if cls._loop and running_loop is cls._loop:
+                return cls._loop.create_task(coro)
+        except RuntimeError:
+            pass
+
+        if cls._loop is None:
+            logger.error("Kein Event-Loop verfuegbar, Coroutine kann nicht geplant werden.")
+            try:
+                coro.close()
+            except Exception:
+                pass
+            return None
+
+        return asyncio.run_coroutine_threadsafe(coro, cls._loop)
 
     @classmethod
     async def _run_callback(cls, cb, *args):
@@ -283,7 +326,7 @@ class Hass:
         if attributes is not None:
             self._state_cache[entity_id]["attributes"] = attributes
 
-        asyncio.create_task(self.set_state_async(entity_id, state, attributes))
+        self._schedule_coroutine(self.set_state_async(entity_id, state, attributes))
 
     def get_entity(self, entity_id: str) -> EntityProxy:
         """Gibt ein EntityProxy-Objekt zurück (Ersatz für AppDaemon's get_entity)."""
@@ -339,7 +382,7 @@ class Hass:
             self.log(f"Fehler bei call_service {service_str}: {e}", "ERROR")
 
     def call_service(self, service: str, **kwargs):
-        asyncio.create_task(self.call_service_async(service, **kwargs))
+        self._schedule_coroutine(self.call_service_async(service, **kwargs))
 
     def turn_on(self, entity_id: str, **kwargs):
         self.call_service("homeassistant.turn_on", entity_id=entity_id, **kwargs)
@@ -360,6 +403,16 @@ class Hass:
     def cancel_listen_state(self, handle: str):
         """Entfernt einen zuvor registrierten State-Listener anhand seines Handles."""
         self._state_listeners[:] = [e for e in self._state_listeners if e[0] != handle]
+
+    def listen_event(self, cb: Callable, event: str = None, **kwargs) -> str:
+        """Registriert einen Event-Listener (kompatibel zu AppDaemon listen_event)."""
+        handle = uuid.uuid4().hex
+        self._event_listeners.append((handle, cb, event, kwargs))
+        return handle
+
+    def cancel_listen_event(self, handle: str):
+        """Entfernt einen zuvor registrierten Event-Listener anhand seines Handles."""
+        self._event_listeners[:] = [e for e in self._event_listeners if e[0] != handle]
 
     # ------------------------------------------------------------------
     # AppDaemon API – Timer
@@ -384,10 +437,12 @@ class Hass:
                 await asyncio.sleep(delay)
 
             while handle in self._timers:
-                asyncio.create_task(self._run_callback(cb, kwargs))
+                self._schedule_coroutine(self._run_callback(cb, kwargs))
                 await asyncio.sleep(interval)
 
-        self._timers[handle] = asyncio.create_task(_timer_loop())
+        scheduled = self._schedule_coroutine(_timer_loop())
+        if scheduled is not None:
+            self._timers[handle] = scheduled
         self._my_timers.append(handle)
         return handle
 
@@ -411,11 +466,13 @@ class Hass:
                     await asyncio.sleep(10)
                     
                 if handle in self._timers:
-                    asyncio.create_task(self._run_callback(cb, kwargs))
+                    self._schedule_coroutine(self._run_callback(cb, kwargs))
                     # Prevent duplicate execution right at the switch second
                     await asyncio.sleep(60)
 
-        self._timers[handle] = asyncio.create_task(_daily_loop())
+        scheduled = self._schedule_coroutine(_daily_loop())
+        if scheduled is not None:
+            self._timers[handle] = scheduled
         self._my_timers.append(handle)
         return handle
 
@@ -426,10 +483,12 @@ class Hass:
         async def _in_loop():
             await asyncio.sleep(seconds)
             if handle in self._timers:
-                asyncio.create_task(self._run_callback(cb, kwargs))
+                self._schedule_coroutine(self._run_callback(cb, kwargs))
                 self.cancel_timer(handle)
 
-        self._timers[handle] = asyncio.create_task(_in_loop())
+        scheduled = self._schedule_coroutine(_in_loop())
+        if scheduled is not None:
+            self._timers[handle] = scheduled
         self._my_timers.append(handle)
         return handle
 
@@ -448,8 +507,8 @@ class Hass:
         """Gibt die aktuelle lokale Zeit als timezone-aware datetime zurück."""
         return datetime.now().astimezone()
 
-    def datetime(self) -> datetime:
-        return datetime.now()
+    def datetime(self, aware: bool = False) -> datetime:
+        return datetime.now().astimezone() if aware else datetime.now()
 
     def date(self) -> date:
         return datetime.now().date()

@@ -155,7 +155,7 @@ class EmsEinspeisebegrenzung(hass.Hass):
             self.notify_all("Fehler in ems_einspeisebegrenzung", str(e))
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            self.log(exc_type, fname, exc_tb.tb_lineno)
+            self.log(f"Exception in {fname}:{exc_tb.tb_lineno} ({exc_type.__name__})", level="ERROR")
 
         self.adapi.run_in(self.ueberwache_einspeisung, UEBERWACHUNGS_INTERVALL)
 

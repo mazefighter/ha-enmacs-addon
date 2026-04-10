@@ -364,8 +364,10 @@ class EmsLadesteuerung(hass.Hass):
         # Listener, der auf Änderungen des Eingangssensors reagiert
         self.listen_state(self.on_new_ueberschuss_measurement, SENSOR_EMS_LADESTEUERUNG_BATTERIE_UEBERSCHUSS_IN_W)
 
-        self.log(f"Glaettung der Werte fuer '{SENSOR_EMS_LADESTEUERUNG_BATTERIE_UEBERSCHUSS_IN_W}' initialisiert. Zeitfenster: {LADEUEBERSCHUSS_GLAETTUNGSWINDOW_SEC
-}s.")
+        self.log(
+            f"Glaettung der Werte fuer '{SENSOR_EMS_LADESTEUERUNG_BATTERIE_UEBERSCHUSS_IN_W}' initialisiert. "
+            f"Zeitfenster: {LADEUEBERSCHUSS_GLAETTUNGSWINDOW_SEC}s."
+        )
 
     def on_new_ueberschuss_measurement(self, entity, attribute, old, new, kwargs):
         """Wird bei jeder neuen Messung des Eingangssensors aufgerufen."""
