@@ -46,10 +46,11 @@ _HTML = """\
         text-transform:uppercase;letter-spacing:.8px}}
     /* Scenario grid */
     .grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}}
-    .card{{background:#fff;border-radius:10px;padding:16px 18px;
+        .card{{background:#fff;border-radius:10px;padding:16px 18px;
            box-shadow:0 1px 6px rgba(0,0,0,.08);border-left:4px solid #ccc;
            cursor:pointer;transition:all .15s;text-decoration:none;
-           display:block;color:inherit}}
+            display:block;color:inherit;width:100%;text-align:left;border-top:none;
+            border-right:none;border-bottom:none}}
     .card:hover{{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.12)}}
     .card.active{{background:#f1f8f4}}
     .card-head{{display:flex;align-items:center;gap:8px;margin-bottom:6px}}
@@ -129,6 +130,15 @@ async function refresh() {{
     document.getElementById('active-name').textContent = 'Aktiv: ' + d.active_scenario_name;
   }} catch(e) {{}}
 }}
+document.querySelectorAll('.card[data-scenario]').forEach(el => {{
+    el.addEventListener('click', async () => {{
+        const key = el.getAttribute('data-scenario');
+        try {{
+            await fetch(`api/scenario/${{key}}`, {{ method:'POST' }});
+            await refresh();
+        }} catch(e) {{}}
+    }});
+}});
 document.getElementById('mf').addEventListener('submit', async e => {{
   e.preventDefault();
   const entity_id = document.getElementById('eid').value;
@@ -162,15 +172,14 @@ def _build_html(active_key: str, entity_states: dict) -> str:
         border = sc["color"]
         pill = '<span class="pill">Aktiv</span>' if is_active else ""
         cards.append(
-            f'<a class="card {"active" if is_active else ""}" '
-            f'style="border-left-color:{border}" '
-            f'href="scenario/{key}">'
+            f'<button type="button" class="card {"active" if is_active else ""}" '
+            f'style="border-left-color:{border}" data-scenario="{key}">'
             f'<div class="card-head">'
             f'<span style="font-size:1.3rem">{sc["icon"]}</span>'
             f'<span class="card-title">{sc["name"]}</span>{pill}'
             f'</div>'
             f'<div class="card-desc">{sc["description"]}</div>'
-            f'</a>'
+            f'</button>'
         )
 
     # Sensor-Zeilen
@@ -393,6 +402,7 @@ class EmsSimulator(hass.Hass):
         app = web.Application()
         app.router.add_get("/",                    self._ui)
         app.router.add_get("/scenario/{key}",      self._trigger_scenario)
+        app.router.add_post("/api/scenario/{key}", self._api_trigger_scenario)
         app.router.add_get("/api/status",          self._api_status)
         app.router.add_get("/api/sensors",         self._api_sensors)
         app.router.add_post("/api/sensor",         self._api_set_sensor)
@@ -419,8 +429,21 @@ class EmsSimulator(hass.Hass):
         ok = await self._apply_scenario(key)
         if not ok:
             return web.Response(status=404, text=f"Szenario '{key}' nicht gefunden.")
-        # Redirect zurück zur UI
-        raise web.HTTPSeeOther("/")
+        # Ingress-sicher zurück zur UI: bevorzugt den aktuellen Referer statt Host-Root.
+        raise web.HTTPSeeOther(request.headers.get("Referer") or "../")
+
+    async def _api_trigger_scenario(self, request: web.Request) -> web.Response:
+        key = request.match_info["key"]
+        ok = await self._apply_scenario(key)
+        status = 200 if ok else 404
+        body = {"ok": ok, "scenario": key}
+        if not ok:
+            body["error"] = f"Szenario '{key}' nicht gefunden."
+        return web.Response(
+            status=status,
+            text=json.dumps(body, ensure_ascii=False),
+            content_type="application/json",
+        )
 
     async def _api_status(self, request: web.Request) -> web.Response:
         active = SCENARIOS.get(self._active_scenario, {})
