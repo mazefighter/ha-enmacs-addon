@@ -199,6 +199,133 @@ INITIAL_ENTITIES: dict = {
         "attributes": {
             "friendly_name": "EMS Dynamischer Strompreis",
             "unit_of_measurement": "EUR/kWh",
+            "data": [18.5] * 96,
+        },
+    },
+
+    # ---- KIS-EMS Kernsensoren fuer Ladesteuerung / Wallbox / Forecast -----
+    "input_boolean.ems_ladesteuerung_aktiv": {
+        "state": "on",
+        "attributes": {"friendly_name": "[SIM] EMS Ladesteuerung aktiv"},
+    },
+    "input_boolean.ems_ladesteuerung_peak_shaving": {
+        "state": "off",
+        "attributes": {"friendly_name": "[SIM] Peak Shaving aktiv"},
+    },
+    "input_boolean.ems_ladesteuerung_niedrigpreis": {
+        "state": "off",
+        "attributes": {"friendly_name": "[SIM] Niedrigpreis-Laden aktiv"},
+    },
+    "input_number.ems_ladesteuerung_niedrigpreisladen_bis_soc": {
+        "state": 70,
+        "attributes": {
+            "friendly_name": "[SIM] Niedrigpreis-Laden bis SoC",
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "unit_of_measurement": "%",
+        },
+    },
+    "input_number.ems_solarprognose_pv_ertrag_bis_low": {
+        "state": 25,
+        "attributes": {
+            "friendly_name": "[SIM] PV Ertrag Grenze Low",
+            "min": 0,
+            "max": 200,
+            "step": 1,
+            "unit_of_measurement": "kWh",
+        },
+    },
+    "input_number.ems_solarprognose_pv_ertrag_bis_mid": {
+        "state": 60,
+        "attributes": {
+            "friendly_name": "[SIM] PV Ertrag Grenze Mid",
+            "min": 0,
+            "max": 300,
+            "step": 1,
+            "unit_of_measurement": "kWh",
+        },
+    },
+    "sensor.ems_ladesteuerung_grid_leistung_in_w": {
+        "state": 5000,
+        "attributes": {
+            "friendly_name": "[SIM] Ladesteuerung Grid Leistung",
+            "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
+        },
+    },
+    "sensor.ems_ladesteuerung_external_battery_leistung_in_w": {
+        "state": 0,
+        "attributes": {
+            "friendly_name": "[SIM] Externe Batterie Leistung",
+            "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
+        },
+    },
+    "sensor.ems_ladesteuerung_batterie_ueberschuss_in_w": {
+        "state": 0,
+        "attributes": {
+            "friendly_name": "[SIM] Batterie Ueberschuss",
+            "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
+        },
+    },
+    "sensor.ems_ladesteuerung_batterie_ueberschuss_geglaettet_in_w": {
+        "state": 0,
+        "attributes": {
+            "friendly_name": "[SIM] Batterie Ueberschuss geglaettet",
+            "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
+        },
+    },
+    "sensor.ems_ladesteuerung_aktive_batterien_soc": {
+        "state": 50,
+        "attributes": {
+            "friendly_name": "[SIM] Aktive Batterien SoC",
+            "unit_of_measurement": "%",
+            "device_class": "battery",
+            "state_class": "measurement",
+        },
+    },
+    "sensor.ems_ladesteuerung_aktive_batterien_unterversorgung_in_w": {
+        "state": 0,
+        "attributes": {
+            "friendly_name": "[SIM] Aktive Batterien Unterversorgung",
+            "unit_of_measurement": "W",
+            "device_class": "power",
+            "state_class": "measurement",
+        },
+    },
+    "sensor.ems_ladesteuerung_wb_main_status": {
+        "state": "idle",
+        "attributes": {"friendly_name": "[SIM] Wallbox Main Status"},
+    },
+    "sensor.ems_ladesteuerung_wb_temperatur_status": {
+        "state": "ok",
+        "attributes": {"friendly_name": "[SIM] Wallbox Temperatur Status"},
+    },
+    "sensor.ems_netzbezug_begrenzung_wallbox_aktiv": {
+        "state": "off",
+        "attributes": {"friendly_name": "[SIM] Wallbox Ueberlastregelung aktiv"},
+    },
+    "sensor.ems_batterie_ladezeit": {
+        "state": 0,
+        "attributes": {
+            "friendly_name": "[SIM] EMS Batterie Ladezeit",
+            "unit_of_measurement": "h",
+            "rest_stunden_ladung": 0,
+        },
+    },
+    "sensor.pv_forecast_sunshine_peaktime_in_s": {
+        "state": 7200,
+        "attributes": {
+            "friendly_name": "[SIM] PV Forecast Peaktime",
+            "unit_of_measurement": "s",
+            "state_class": "measurement",
         },
     },
 }
@@ -397,4 +524,15 @@ ENTITY_LABELS: dict = {
     "sensor.sun_next_dusk":                                     "Nächster Sonnenuntergang",
     "sensor.dwd_temperatur":                                     "DWD Temperatur (°C)",
     "sensor.ems_dynamischer_strompreis":                        "Dynamischer Strompreis (€/kWh)",
+    "sensor.ems_ladesteuerung_grid_leistung_in_w":              "Ladesteuerung Grid Leistung (W)",
+    "sensor.ems_ladesteuerung_external_battery_leistung_in_w":  "Externe Batterie Leistung (W)",
+    "sensor.ems_ladesteuerung_batterie_ueberschuss_in_w":       "Batterie Ueberschuss (W)",
+    "sensor.ems_ladesteuerung_batterie_ueberschuss_geglaettet_in_w": "Batterie Ueberschuss geglaettet (W)",
+    "sensor.ems_ladesteuerung_aktive_batterien_soc":            "Aktive Batterien SoC (%)",
+    "sensor.ems_ladesteuerung_aktive_batterien_unterversorgung_in_w": "Aktive Batterien Unterversorgung (W)",
+    "sensor.ems_ladesteuerung_wb_main_status":                  "Wallbox Main Status",
+    "sensor.ems_ladesteuerung_wb_temperatur_status":            "Wallbox Temperatur Status",
+    "sensor.ems_netzbezug_begrenzung_wallbox_aktiv":            "Wallbox Ueberlastregelung aktiv",
+    "sensor.ems_batterie_ladezeit":                             "Batterie Ladezeit (h)",
+    "sensor.pv_forecast_sunshine_peaktime_in_s":                "PV Forecast Peaktime (s)",
 }

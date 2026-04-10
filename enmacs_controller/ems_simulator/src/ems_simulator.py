@@ -351,6 +351,57 @@ class EmsSimulator(hass.Hass):
             except ValueError:
                 pass
 
+            # KIS-EMS Hilfssensoren aus den Basiswerten ableiten
+            try:
+                grid_now = float(self.get_state("sensor.grid_leistung_gesamt_in_w", default="0"))
+                pv_now = float(self.get_state("sensor.pv_anlage_1_2_gesamtleistung_in_w", default="0"))
+                batt_now = float(self.get_state("sensor.batterie_leistung", default="0"))
+                soc_now = float(self.get_state("sensor.soc_gesamt", default="50"))
+                wb_now = float(self.get_state("sensor.wallbox_leistung", default="0"))
+
+                surplus = pv_now - max(grid_now, 0.0)
+                deficit = max(0.0, -surplus)
+
+                await self.set_state_async("sensor.ems_ladesteuerung_grid_leistung_in_w", state=int(grid_now))
+                await self.set_state_async("sensor.ems_ladesteuerung_external_battery_leistung_in_w", state=int(batt_now))
+                await self.set_state_async("sensor.ems_ladesteuerung_batterie_ueberschuss_in_w", state=int(surplus))
+                await self.set_state_async("sensor.ems_ladesteuerung_batterie_ueberschuss_geglaettet_in_w", state=int(surplus))
+                await self.set_state_async("sensor.ems_ladesteuerung_aktive_batterien_soc", state=round(soc_now, 1))
+                await self.set_state_async("sensor.ems_ladesteuerung_aktive_batterien_unterversorgung_in_w", state=int(deficit))
+
+                wb_state = "charging" if wb_now > 100 else "idle"
+                await self.set_state_async("sensor.ems_ladesteuerung_wb_main_status", state=wb_state)
+
+                limit_active = self.get_state("sensor.ems_netzbezug_begrenzung", attribute="aktiviert", default=False)
+                await self.set_state_async(
+                    "sensor.ems_netzbezug_begrenzung_wallbox_aktiv",
+                    state="on" if bool(limit_active) else "off",
+                )
+
+                price_ct = max(5.0, min(55.0, 18.0 + random.uniform(-4.0, 8.0)))
+                await self.set_state_async(
+                    "sensor.ems_dynamischer_strompreis",
+                    state=round(price_ct, 2),
+                    attributes={
+                        "friendly_name": "EMS Dynamischer Strompreis",
+                        "unit_of_measurement": "EUR/kWh",
+                        "data": [round(price_ct, 2)] * 96,
+                    },
+                )
+
+                rest_hours = max(0.0, (100.0 - soc_now) / 12.0)
+                await self.set_state_async(
+                    "sensor.ems_batterie_ladezeit",
+                    state=round(rest_hours, 1),
+                    attributes={
+                        "friendly_name": "[SIM] EMS Batterie Ladezeit",
+                        "unit_of_measurement": "h",
+                        "rest_stunden_ladung": round(rest_hours, 1),
+                    },
+                )
+            except ValueError:
+                pass
+
             # Grid Power
             grid_str = self.get_state("sensor.grid_leistung_gesamt_in_w", default="0")
             try:
