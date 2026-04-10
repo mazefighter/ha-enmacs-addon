@@ -1,8 +1,9 @@
 name: KIS EMS Simulator
 description: Test- und Simulationsumgebung fuer das KIS Energiemanagementsystem
-version: 0.1.1
+version: 0.1.2
 slug: ems_simulator
 init: false
+homeassistant_api: true
 arch:
 - aarch64
 - amd64

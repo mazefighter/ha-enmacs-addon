@@ -280,7 +280,7 @@ class EmsSimulator(hass.Hass):
     # Auto-Bestätigung Wallbox-Jobs
     # ------------------------------------------------------------------
 
-    def _on_begrenzung_changed(self, entity, attribute, old, new, **kwargs):
+    async def _on_begrenzung_changed(self, entity, attribute, old, new, **kwargs):
         """
         Wenn ems_bezugsueberwachung einen Job anlegt (timestamp-Attribut ändert
         sich und aktiviert=True), bestätigen wir ihn nach confirm_delay_seconds.
@@ -310,17 +310,15 @@ class EmsSimulator(hass.Hass):
     # Sonne aktualisieren
     # ------------------------------------------------------------------
 
-    def _update_sun(self, kwargs):
+    async def _update_sun(self, kwargs):
         now = datetime.now()
         dusk = now.replace(hour=20, minute=30, second=0, microsecond=0)
         if dusk <= now:
             dusk += timedelta(days=1)
-        asyncio.create_task(
-            self.set_state_async(
-                "sensor.sun_next_dusk",
-                state=dusk.isoformat(),
-                attributes={"friendly_name": "[SIM] Nächster Sonnenuntergang"},
-            )
+        await self.set_state_async(
+            "sensor.sun_next_dusk",
+            state=dusk.isoformat(),
+            attributes={"friendly_name": "[SIM] Nächster Sonnenuntergang"},
         )
 
     # ------------------------------------------------------------------
