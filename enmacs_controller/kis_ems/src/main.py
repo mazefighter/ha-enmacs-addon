@@ -297,64 +297,64 @@ def _category_for_entity(entity_id):
 
 
 def _categorized_entities():
-        categories = {
-                "Core": [],
-                "Facility": [],
-                "Storage": [],
-                "Wallbox": [],
-                "System": [],
-        }
-        for entity_id, state_obj in Hass._state_cache.items():
-                category = _category_for_entity(entity_id)
-                categories[category].append(
-                        {
-                                "entity_id": entity_id,
-                                "state": state_obj.get("state", "-"),
-                                "unit": _extract_unit(state_obj),
-                        }
-                )
+    categories = {
+        "Core": [],
+        "Facility": [],
+        "Storage": [],
+        "Wallbox": [],
+        "System": [],
+    }
+    for entity_id, state_obj in Hass._state_cache.items():
+        category = _category_for_entity(entity_id)
+        categories[category].append(
+            {
+                "entity_id": entity_id,
+                "state": state_obj.get("state", "-"),
+                "unit": _extract_unit(state_obj),
+            }
+        )
 
-        for key in categories:
-                categories[key].sort(key=lambda row: row["entity_id"])
+    for key in categories:
+        categories[key].sort(key=lambda row: row["entity_id"])
 
-        return categories
-
-
-    def _normalize_state_value(value):
-        if value is None:
-            return "-"
-        return str(value)
+    return categories
 
 
-    def _update_important_event_log():
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        event_log = _RUNTIME["event_log"]
-        last_states = _RUNTIME["last_states"]
+def _normalize_state_value(value):
+    if value is None:
+        return "-"
+    return str(value)
 
-        for entity_id, label in _IMPORTANT_ENTITY_LABELS.items():
-            current_obj = Hass._state_cache.get(entity_id) or {}
-            current_state = _normalize_state_value(current_obj.get("state"))
-            previous_state = last_states.get(entity_id)
 
-            if previous_state is None:
-                last_states[entity_id] = current_state
-                continue
+def _update_important_event_log():
+    now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    event_log = _RUNTIME["event_log"]
+    last_states = _RUNTIME["last_states"]
 
-            if previous_state != current_state:
-                event_log.insert(
-                    0,
-                    {
-                        "ts": now_ts,
-                        "entity_id": entity_id,
-                        "label": label,
-                        "state": current_state,
-                        "prev": previous_state,
-                    },
-                )
-                last_states[entity_id] = current_state
+    for entity_id, label in _IMPORTANT_ENTITY_LABELS.items():
+        current_obj = Hass._state_cache.get(entity_id) or {}
+        current_state = _normalize_state_value(current_obj.get("state"))
+        previous_state = last_states.get(entity_id)
 
-        if len(event_log) > _MAX_EVENT_LOG:
-            del event_log[_MAX_EVENT_LOG:]
+        if previous_state is None:
+            last_states[entity_id] = current_state
+            continue
+
+        if previous_state != current_state:
+            event_log.insert(
+                0,
+                {
+                    "ts": now_ts,
+                    "entity_id": entity_id,
+                    "label": label,
+                    "state": current_state,
+                    "prev": previous_state,
+                },
+            )
+            last_states[entity_id] = current_state
+
+    if len(event_log) > _MAX_EVENT_LOG:
+        del event_log[_MAX_EVENT_LOG:]
 
 
 def _make_ui_app(started_at):
@@ -364,9 +364,9 @@ def _make_ui_app(started_at):
                 return web.Response(text=_HTML, content_type="text/html")
 
         async def _status(_request):
-                now = asyncio.get_running_loop().time()
+            now = asyncio.get_running_loop().time()
             _update_important_event_log()
-                body = {
+            body = {
                 "now": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "uptime_s": int(now - started_at),
                         "loaded_apps": _RUNTIME["loaded_apps"],
