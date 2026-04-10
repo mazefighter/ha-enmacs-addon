@@ -46,16 +46,16 @@ _HTML = """\
         text-transform:uppercase;letter-spacing:.8px}}
     /* Scenario grid */
     .grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}}
-        .card{{background:#fff;border-radius:10px;padding:16px 18px;
+            .card{{background:#fff;border-radius:10px;padding:16px 18px;
            box-shadow:0 1px 6px rgba(0,0,0,.08);border-left:4px solid #ccc;
            cursor:pointer;transition:all .15s;text-decoration:none;
-            display:block;color:inherit;width:100%;text-align:left;border-top:none;
+                display:block;color:inherit;width:100%;text-align:left;border-top:none;
             border-right:none;border-bottom:none}}
     .card:hover{{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.12)}}
     .card.active{{background:#f1f8f4}}
-    .card-head{{display:flex;align-items:center;gap:8px;margin-bottom:6px}}
-    .card-title{{font-size:.95rem;font-weight:600}}
-    .card-desc{{font-size:.8rem;color:#666;line-height:1.45}}
+            .card-head{{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;flex-wrap:wrap}}
+            .card-title{{font-size:.95rem;font-weight:600;min-width:0;overflow-wrap:anywhere}}
+            .card-desc{{font-size:.8rem;color:#666;line-height:1.45;overflow-wrap:anywhere}}
     .pill{{font-size:.65rem;background:#4caf50;color:#fff;
            padding:2px 8px;border-radius:10px;white-space:nowrap}}
     /* Sensor table */
@@ -73,9 +73,9 @@ _HTML = """\
     .row{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}}
     select,input{{padding:7px 10px;border:1px solid #dde;border-radius:6px;
                   font-size:.85rem;flex:1;min-width:140px}}
-    btn,button{{background:#1a237e;color:#fff;border:none;padding:7px 18px;
-                border-radius:6px;cursor:pointer;font-size:.85rem;white-space:nowrap}}
-    button:hover{{background:#283593}}
+    .mform button{{background:#1a237e;color:#fff;border:none;padding:7px 18px;
+                   border-radius:6px;cursor:pointer;font-size:.85rem;white-space:nowrap}}
+    .mform button:hover{{background:#283593}}
     .msg{{font-size:.75rem;color:#777;margin-top:4px}}
     footer{{text-align:center;margin-top:32px;font-size:.75rem;color:#aaa}}
     a{{color:#1a237e}}
