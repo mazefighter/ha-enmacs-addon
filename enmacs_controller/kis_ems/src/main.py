@@ -326,7 +326,6 @@ async def start_apps():
     ext_config_file = "/config/kis-ems.yaml"
     if os.path.exists(ext_config_file):
         try:
-            import yaml
             with open(ext_config_file, "r", encoding="utf-8") as f:
                 ext_cfg = yaml.safe_load(f)
                 if ext_cfg:
