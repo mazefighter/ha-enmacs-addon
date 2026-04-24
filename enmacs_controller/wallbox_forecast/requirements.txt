@@ -2,7 +2,7 @@ holidays
 influxdb
 numpy
 pandas
-scikit-learn==1.6.1
+
 schedule
 tzdata
 websockets

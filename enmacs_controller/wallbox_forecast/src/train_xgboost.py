@@ -22,7 +22,6 @@ from zoneinfo import ZoneInfo
 import holidays
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error
 
 try:
     import xgboost as xgb
