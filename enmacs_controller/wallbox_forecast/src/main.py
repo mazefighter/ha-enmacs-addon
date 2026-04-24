@@ -77,17 +77,13 @@ def run_pipeline() -> None:
 
 
 def main() -> None:
-    options = load_options()
-    run_on_startup: bool = options.get("run_on_startup", False)
-
     log.info("Wallbox Forecast Add-on gestartet.")
     log.info("Pipeline wird täglich um 01:00 Uhr (Europe/Berlin) ausgeführt.")
 
     schedule.every().day.at("01:00").do(run_pipeline)
 
-    if run_on_startup:
-        log.info("run_on_startup=true: Starte Pipeline sofort ...")
-        run_pipeline()
+    log.info("Starte Pipeline beim Add-on Start ...")
+    run_pipeline()
 
     while True:
         schedule.run_pending()
