@@ -3,6 +3,8 @@ description: Trainiert täglich um 01:00 Uhr das XGBoost-Modell und schreibt Pro
 version: 1.0.0
 slug: wallbox_forecast
 init: false
+homeassistant_api: true
+hassio_api: true
 arch:
   - aarch64
   - amd64
