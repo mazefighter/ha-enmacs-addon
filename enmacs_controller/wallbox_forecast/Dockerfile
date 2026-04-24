@@ -10,6 +10,9 @@ RUN apk add --no-cache \
         musl-dev \
         python3-dev
 
+ENV CMAKE_BUILD_PARALLEL_LEVEL=1
+ENV MAKEFLAGS="-j1"
+
 WORKDIR /usr/src/app
 
 COPY requirements.txt .
