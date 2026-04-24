@@ -3,7 +3,10 @@ FROM $BUILD_FROM
 
 RUN apk add --no-cache \
         libgomp \
-        openblas-dev
+        openblas-dev \
+        g++ \
+        musl-dev \
+        python3-dev
 
 WORKDIR /usr/src/app
 
