@@ -1,0 +1,36 @@
+name: Wallbox Forecast
+description: Trainiert täglich um 01:00 Uhr das XGBoost-Modell und schreibt Prognosen + Ist-Daten in InfluxDB.
+version: 1.0.0
+slug: wallbox_forecast
+init: false
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+startup: application
+boot: auto
+map:
+  - data:rw
+options:
+  hass_token: ''
+  hass_host: ems.kis-gmbh.de
+  influx_host: localhost
+  influx_port: 8086
+  influx_db: xgb_forecasts
+  influx_user: ''
+  influx_password: ''
+  run_on_startup: false
+schema:
+  hass_token: password
+  hass_host: str
+  influx_host: str
+  influx_port: int
+  influx_db: str
+  influx_user: str
+  influx_password: password
+  run_on_startup: bool
+environment:
+  PYTHONUNBUFFERED: '1'
+  TZ: Europe/Berlin
