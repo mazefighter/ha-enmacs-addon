@@ -2,7 +2,9 @@ ARG BUILD_FROM
 FROM $BUILD_FROM
 
 RUN apk add --no-cache \
+        cmake \
         libgomp \
+        make \
         openblas-dev \
         g++ \
         musl-dev \
