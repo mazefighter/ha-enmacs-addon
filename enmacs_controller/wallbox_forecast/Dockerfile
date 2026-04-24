@@ -1,10 +1,9 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/base-python:3.11
 FROM $BUILD_FROM
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        libgomp1 \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+        libgomp \
+        openblas-dev
 
 WORKDIR /usr/src/app
 
