@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/base-python:3.11
+ARG BUILD_FROM
 FROM $BUILD_FROM
 
 RUN apk add --no-cache \
