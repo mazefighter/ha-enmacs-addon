@@ -10,7 +10,7 @@ RUN apt-get update \
 WORKDIR /usr/src/app
 
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir --break-system-packages --prefer-binary -r requirements.txt
+RUN pip3 install --no-cache-dir --prefer-binary -r requirements.txt
 
 RUN mkdir -p /usr/src/models
 

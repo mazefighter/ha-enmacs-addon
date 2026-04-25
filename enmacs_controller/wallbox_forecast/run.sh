@@ -1,4 +1,3 @@
-#!/usr/bin/with-contenv bashio
-
+#!/bin/bash
 echo "Starte Wallbox Forecast Add-on..."
-python3 /usr/src/app/main.py
+exec python3 /usr/src/app/main.py
