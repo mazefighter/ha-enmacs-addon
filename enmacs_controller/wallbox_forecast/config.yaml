@@ -1,6 +1,6 @@
 name: Wallbox Forecast
 description: Trainiert täglich um 01:00 Uhr das XGBoost-Modell und schreibt Prognosen + Ist-Daten in InfluxDB.
-version: 1.0.3
+version: 1.0.4
 slug: wallbox_forecast
 init: false
 homeassistant_api: true
