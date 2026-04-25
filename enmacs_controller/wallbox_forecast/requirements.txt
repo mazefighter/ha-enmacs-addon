@@ -6,4 +6,4 @@ pandas
 schedule
 tzdata
 websockets
-xgboost
+xgboost==2.1.3
