@@ -1,14 +1,11 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-RUN apk add --no-cache \
-        cmake \
-        libgomp \
-        make \
-        openblas-dev \
-        g++ \
-        musl-dev \
-        python3-dev
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libgomp1 \
+        libopenblas0 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
